@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ponto</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            $("#btnpesquisar").click(function(){
+                exibirTodosRegistros();
+            });
+        });
+    </script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">Ponto</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="#">Início</a>
+            </li>
+            <li class="nav-item">
+            <a class="nav-link" href="#floatingInput">Registrar</a>
+            </li>
+        </ul>
+        <form class="d-flex">
+            <input class="form-control me-2" type="search" placeholder="Pesquisar" aria-label="Search">
+            <button id="btnpesquisar" class="btn btn-outline-success" type="submit">Pesquisar</button>
+        </form>
+        </div>
+    </div>
+    </nav>
+    <div class="d-inline">
+        <div class="form-floating mb-3">
+            <input type="datetime-local" class="form-control" id="floatingInput" placeholder="dd/mm/yyyy hh:mm">
+            <label for="floatingInput">Data/Hora</label>
+        </div>
+        <button type="button" class="btn btn-outline-primary" onclick="cadastrarPonto()">Registrar</button>
+    </div>    
+    <div class="d-inline">
+        <table class="table table-hover">
+            <thead>
+                <th>#</th>
+                <th>Data/Hora</th>
+            </thead>
+            <tbody id="tabelalinha">
+            </tbody>
+        </table>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script>
+
+        function excluirPonto(id) {
+            const url = `http://localhost:4000/ponto/${id}`;
+            const options = {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "Application/json"
+                }
+            };
+
+            fetch(url,options)
+            .then(response => response.json())
+            .then(dados => {
+                console.log("Registro excluído com sucesso.")
+            })
+            .catch(erro => console.error("Erro ao excluir o registro.",erro));
+
+            exibirTodosRegistros();
+        };
+
+        function atualizarPonto(elemento,id) {
+            let idponto = id;
+            let datahora = elemento.value;
+            const url = `http://localhost:4000/ponto/${idponto}/?datahora=${formataData(datahora,2)} `;
+            const options = {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "Application/json"
+                }
+            };
+
+            fetch(url,options)
+            .then(response => response.json())
+            .then(dados => {
+                console.log("Registro atualizado com sucesso.");
+            })
+            .catch(erro => console.error("Erro ao atualizar o registro.",erro));
+        };
+
+        function cadastrarPonto(){
+            let datahora = document.getElementById("floatingInput").value;
+            url = `http://localhost:4000/ponto/?datahora=${formataData(datahora,2)}`;
+            options ={
+                method: "POST",
+                headers: {
+                    "Content-Type": "Application/Json"
+                }
+            };
+            
+            fetch(url,options)
+            .then(response => response.json())
+            .then(dados => {
+                console.log("Registro inserido com sucesso.")
+            })
+            .catch(erro => console.error("Erro ao inserir um registro.",erro))
+
+            exibirTodosRegistros();
+
+        };
+
+        function exibirTodosRegistros() {            
+                const data = new Date();
+                fetch('http://localhost:4000/ponto')
+                .then(response => response.json())
+                .then(dados => {
+                    const data = new Date();                    
+                    $("#tabelalinha").empty();
+                    dados.forEach(item => {
+                        $("#tabelalinha").append(`<tr>
+                                                    <td id="idponto">${item.id}</td>
+                                                    <td id="idponto"><input type="text" id="iddatahora" value="${formataData(item.datahora,1)}" onChange="atualizarPonto(this,${item.id})" class="form-control"/></td>
+                                                    <td><button id="btnExcluir" onClick="excluirPonto(${item.id})" class="btn btn-outline-danger btn-sm"/>Excluir</button></td>
+                                                </tr>`
+                        );
+                    });
+                })
+                .catch(erro => console.error("Erro ao ler os dados da API.",erro));
+        };
+
+        function formataData(data,tipo) {
+
+            let dataFormatada = data;
+            let arraySeparaDataHora = data.split("T");
+            let arrayData = arraySeparaDataHora[0].split("-");
+            let arrayHora = arraySeparaDataHora[1].split(":");
+            let dia = arrayData[2];
+            let mes = arrayData[1];
+            let ano = arrayData[0];
+            let hora = arrayHora[0];
+            let minuto = arrayHora[1];
+            let segundo = arrayHora[2];
+
+            switch (tipo) {
+                case 1:
+                    dataFormatada = `${dia}/${mes}/${ano} ${hora}:${minuto}:${segundo}`;
+                    break;
+                case 2:
+                    dataFormatada = `${ano}-${mes}-${dia}T${hora}-${minuto}-${segundo}`;
+                default:
+                    break;
+            };
+
+            return dataFormatada;
+            
+        }
+    </script>
+    </body>
+</html>
